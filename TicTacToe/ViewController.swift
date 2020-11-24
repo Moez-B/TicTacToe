@@ -109,6 +109,12 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
         }
     }
     
+    func doMove(_ x: Int, _ y:Int, _ p:Int) -> [[Int]]{
+        var mgrid = self.grid
+        mgrid[y][x] = p
+        return mgrid
+    }
+    
     func turnAdd() {
         turn += 1
     }
@@ -181,11 +187,10 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
     
     func compute_cpuMove(_ dif:String) -> (UIImageView) {
         switch(dif) {
-        case "MEDIUM":
-            var numX:Int = Int()
-            var numY:Int = Int()
-            print("\(numY) and \(numX) were chosen")
-            return positionToImageView(numY,numX)
+        case "HARD":
+            var place: (Int, Int) = getBestMove(self.grid)
+            return positionToImageView(place.0, place.1)
+        //case "HARD":
             
         default:
             var ranNumY:Int = 0
@@ -197,6 +202,70 @@ class ViewController: UIViewController,UIGestureRecognizerDelegate {
             print("\(ranNumY) and \(ranNumX) were chosen")
             return positionToImageView(ranNumY,ranNumX)
         }
+    }
+    
+    func isTie(_ grid:[[Int]]) -> Bool {
+        for row in grid {
+            for i in row {
+                if i == 0 {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+    
+    func avaliableMoves(_ grid:[[Int]]) -> [[Int]] {
+        var ret:[[Int]] = []
+        for i in 0...2 {
+            for j in 0...2 {
+                if grid[i][j] == 0 {
+                    ret.append([i,j])
+                }
+            }
+        }
+        return ret
+    }
+    
+    func minimax(_ grid:[[Int]], _ isMaximizing: Bool, _ player: Int) -> Int {
+        if isWin(winner(grid)) && player == 2 {
+            return 1
+        }
+        else if isWin(winner(grid)) && player != 2 {
+            return -1
+        }
+        else if isTie(grid) {
+            return 0
+        }
+        if isMaximizing {
+            var best = Int.min
+            for move in avaliableMoves(grid) {
+                let res = minimax(doMove(move[0],move[1],2), false, 2)
+                best = max(res, best)
+            }
+            return best
+        }
+        else {
+            var worst = Int.max
+            for move in avaliableMoves(grid) {
+                let res = minimax(doMove(move[0],move[1],2), true, 2)
+                worst = min(res, worst)
+            }
+            return worst
+        }
+    }
+    
+    func getBestMove(_ grid:[[Int]]) -> (Int, Int) {
+        var best = Int.min
+        var bestMove = [-1,-1]
+        for move in avaliableMoves(grid) {
+            let res = minimax(doMove(move[0], move[1], 2), false, 2)
+            if res > best {
+                best = res
+                bestMove = move
+            }
+        }
+        return (bestMove[0], bestMove[1])
     }
     
     func execute_cpuMove() {
